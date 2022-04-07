@@ -1,6 +1,9 @@
 package com.kreitek.editor;
 
 import com.kreitek.editor.commands.CommandFactory;
+import com.kreitek.editor.commands.CommandFactoryCaretaker;
+import com.kreitek.editor.commands.Memento;
+import com.kreitek.editor.commands.UndoCommand;
 
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -17,7 +20,8 @@ public class ConsoleEditor implements Editor {
     public static final String TEXT_WHITE = "\u001B[37m";
 
     private final CommandFactory commandFactory = new CommandFactory();
-    private ArrayList<String> documentLines = new ArrayList<String>();
+    private ArrayList<String> documentLines = new ArrayList<>();
+    CommandFactoryCaretaker caretaker = CommandFactoryCaretaker.getInstance();
 
     @Override
     public void run() {
@@ -26,7 +30,12 @@ public class ConsoleEditor implements Editor {
             String commandLine = waitForNewCommand();
             try {
                 Command command = commandFactory.getCommand(commandLine);
-                command.execute(documentLines);
+                if (!(command instanceof UndoCommand)){
+                    caretaker.add(saveStateToMemento());
+                    command.execute(documentLines);
+                }else{
+                    command.execute(documentLines);
+                }
             } catch (BadCommandException e) {
                 printErrorToConsole("Bad command");
             } catch (ExitException e) {
@@ -64,6 +73,7 @@ public class ConsoleEditor implements Editor {
         printLnToConsole("To add new line -> a \"your text\"");
         printLnToConsole("To update line  -> u [line number] \"your text\"");
         printLnToConsole("To delete line  -> d [line number]");
+        printLnToConsole("To restore  -> undo");
     }
 
     private void printErrorToConsole(String message) {
@@ -82,6 +92,12 @@ public class ConsoleEditor implements Editor {
 
     private void printToConsole(String message) {
         System.out.print(message);
+    }
+
+    public Memento saveStateToMemento(){
+        Memento memento = new Memento();
+        memento.setState(this.documentLines);
+        return memento;
     }
 
 }
