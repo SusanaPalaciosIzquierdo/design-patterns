@@ -4,6 +4,9 @@ import com.kreitek.editor.commands.CommandFactory;
 import com.kreitek.editor.commands.CommandFactoryCaretaker;
 import com.kreitek.editor.commands.Memento;
 import com.kreitek.editor.commands.UndoCommand;
+import com.kreitek.editor.formatos.FormatFactoryProducer;
+import com.kreitek.editor.formatos.Formato;
+import com.kreitek.editor.formatos.FormatoFactory;
 
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -24,7 +27,7 @@ public class ConsoleEditor implements Editor {
     CommandFactoryCaretaker caretaker = CommandFactoryCaretaker.getInstance();
 
     @Override
-    public void run() {
+    public void run(String[] args) {
         boolean exit = false;
         while (!exit) {
             String commandLine = waitForNewCommand();
@@ -41,25 +44,14 @@ public class ConsoleEditor implements Editor {
             } catch (ExitException e) {
                 exit = true;
             }
-            showDocumentLines(documentLines);
-            showHelp();
-        }
-    }
-
-    private void showDocumentLines(ArrayList<String> textLines) {
-        if (textLines.size() > 0){
-            setTextColor(TEXT_YELLOW);
-            printLnToConsole("START DOCUMENT ==>");
-            for (int index = 0; index < textLines.size(); index++) {
-                StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append("[");
-                stringBuilder.append(index);
-                stringBuilder.append("] ");
-                stringBuilder.append(textLines.get(index));
-                printLnToConsole(stringBuilder.toString());
+            try{
+                FormatFactoryProducer formatFactoryProducer = new FormatFactoryProducer();
+                FormatoFactory factory = formatFactoryProducer.getFactory(args[0]);
+                Formato formato = factory.showDocumentLines(documentLines);
+            }catch (BadFactoryException e){
+                printErrorToConsole("Invalid command");
             }
-            printLnToConsole("<== END DOCUMENT");
-            setTextColor(TEXT_RESET);
+            showHelp();
         }
     }
 
